@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Box Office - Movie Details</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='details.style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <a href="/" class="logo">🎬 BOX OFFICE</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+      </div>
+    </header>
+
+    <div class="container">
+      <a href="javascript:history.back()" class="back-btn">&larr; Go Back</a>
+
+      <div id="detailContainer">
+        <p style="text-align: center; color: var(--text-muted)">
+          Loading movie details...
+        </p>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        &copy; 2026 Box Office. All copyrights are reserved by
+        <strong>Gothari Kusuma</strong>.
+      </p>
+      <div class="social-links">
+        <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
+        <a href="https://linkedin.com/in/kusuma-gothari-dummy" target="_blank"
+          >LinkedIn</a
+        >
+        <a href="https://github.com/kusuma-gothari-dummy" target="_blank"
+          >GitHub</a
+        >
+      </div>
+    </footer>
+
+    <script>
+      const movieId = "{{ movie_id }}";
+
+      window.onload = async function () {
+        const container = document.getElementById("detailContainer");
+        if (!movieId) {
+          container.innerHTML = "<p>Invalid movie ID specified.</p>";
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/movie-details/${movieId}`);
+          const movie = await response.json();
+
+          const title = movie.primaryTitle || movie.originalTitle || "Untitled";
+          const poster =
+            movie.primaryImage ||
+            "https://via.placeholder.com/300x440?text=No+Image";
+          const year =
+            movie.startYear ||
+            (movie.releaseDate ? movie.releaseDate.split("-")[0] : "N/A");
+          const rating = movie.averageRating
+            ? `${movie.averageRating} / 10`
+            : "N/A";
+          const genres = movie.genres ? movie.genres.join(", ") : "N/A";
+          const description = movie.description || "No plot summary available.";
+          const runtime = movie.runtimeMinutes
+            ? `${movie.runtimeMinutes} mins`
+            : "N/A";
+
+          container.innerHTML = `
+                    <div class="movie-detail-card">
+                        <img class="movie-poster" src="${poster}" alt="${title}">
+                        <div class="movie-info">
+                            <h1>${title} (${year})</h1>
+                            
+                            <div class="badges-row">
+                                <span class="badge badge-rating">⭐ ${rating}</span>
+                                <span class="badge">⏱️ ${runtime}</span>
+                                <span class="badge">🎭 ${genres}</span>
+                            </div>
+
+                            <div class="plot-heading">Plot Overview</div>
+                            <p class="plot-text">${description}</p>
+                        </div>
+                    </div>
+                `;
+        } catch (err) {
+          container.innerHTML = "<p>Failed to load details from API.</p>";
+        }
+      };
+    </script>
+  </body>
+</html>

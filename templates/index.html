@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Box Office - Home</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='index.style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <a href="/" class="logo">🎬 BOX OFFICE</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/search-page" class="search-btn-nav">🔍 Search Movies</a>
+      </div>
+    </header>
+
+    <div class="hero">
+      <h1>Discover Blockbuster Movies</h1>
+      <p>Explore Trending Telugu, Tamil, Malayalam & Top Rated Indian Cinema</p>
+    </div>
+
+    <div class="container">
+      <!-- Language Filter Tabs (Telugu Default) -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchCategory('telugu', this)">
+          Trending Telugu
+        </button>
+        <button class="tab-btn" onclick="switchCategory('tamil', this)">
+          Trending Tamil
+        </button>
+        <button class="tab-btn" onclick="switchCategory('malayalam', this)">
+          Top Malayalam
+        </button>
+        <button class="tab-btn" onclick="switchCategory('top-indian', this)">
+          Top Rated Indian
+        </button>
+      </div>
+
+      <div id="categoryTitle" class="section-title">Trending Telugu Movies</div>
+      <div id="movieGrid" class="grid">
+        <p style="color: var(--text-muted)">Loading movies...</p>
+      </div>
+
+      {/* Special Curated Director & Cast Collections */}
+      <div class="special-section">
+        <h3>🌟 Explore Special Collections</h3>
+        <p style="color: var(--text-muted); font-size: 14px">
+          Quick check curated director and cast filmographies based on your
+          endpoints:
+        </p>
+        <div class="special-btns">
+          <a
+            href="#"
+            class="special-btn"
+            onclick="loadPersonTitles('director', 'nm0634240', 'Director Masterpieces')"
+            >🎬 Director Titles (ID: nm0634240)</a
+          >
+          <a
+            href="#"
+            class="special-btn"
+            onclick="loadPersonTitles('cast', 'nm0000158', 'Featured Cast Filmography')"
+            >⭐ Cast Titles Collection</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer-content">
+        <p>
+          &copy; 2026 Box Office. All copyrights are reserved by
+          <strong>Gothari Kusuma</strong>.
+        </p>
+        <div class="social-links">
+          <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
+          <a href="https://linkedin.com/in/kusuma-gothari-dummy" target="_blank"
+            >LinkedIn</a
+          >
+          <a href="https://github.com/kusuma-gothari-dummy" target="_blank"
+            >GitHub</a
+          >
+        </div>
+        <p style="font-size: 11px; color: #666; margin-top: 8px">
+          Designed for academic project demonstration.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // Load default category (Telugu) on startup
+      window.onload = function () {
+        fetchMovies("telugu");
+      };
+
+      function switchCategory(category, btnElement) {
+        // Update active tab styling
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        btnElement.classList.add("active");
+
+        // Update Section Title header text
+        const titles = {
+          telugu: "Trending Telugu Movies",
+          tamil: "Trending Tamil Movies",
+          malayalam: "Top Rated Malayalam Movies",
+          "top-indian": "Top Rated Indian Movies",
+        };
+        document.getElementById("categoryTitle").innerText = titles[category];
+
+        fetchMovies(category);
+      }
+
+      async function fetchMovies(category) {
+        const grid = document.getElementById("movieGrid");
+        grid.innerHTML = "<p style='color: var(--text-muted);'>Loading...</p>";
+
+        try {
+          const response = await fetch(`/api/movies/${category}`);
+          const data = await response.json();
+
+          grid.innerHTML = "";
+          const items = Array.isArray(data) ? data : data.results || [];
+
+          if (items.length === 0) {
+            grid.innerHTML = "<p>No movies found.</p>";
+            return;
+          }
+
+          items.forEach((movie) => {
+            const title =
+              movie.primaryTitle || movie.originalTitle || "Untitled";
+            const image =
+              movie.primaryImage ||
+              "https://via.placeholder.com/200x280?text=No+Image";
+            const year = movie.startYear || "";
+            const id = movie.id;
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.onclick = () =>
+              (window.location.href = `/details-page?id=${id}`);
+            card.innerHTML = `
+                        <img src="${image}" alt="${title}">
+                        <div class="card-body">
+                            <h4>${title}</h4>
+                            <p>${year}</p>
+                        </div>
+                    `;
+            grid.appendChild(card);
+          });
+        } catch (err) {
+          grid.innerHTML = "<p>Error loading movies.</p>";
+        }
+      }
+
+      async function loadPersonTitles(type, id, collectionName) {
+        document.getElementById("categoryTitle").innerText = collectionName;
+        const grid = document.getElementById("movieGrid");
+        grid.innerHTML =
+          "<p style='color: var(--text-muted);'>Loading collection...</p>";
+
+        try {
+          const response = await fetch(`/api/person/${type}/${id}`);
+          const data = await response.json();
+
+          grid.innerHTML = "";
+          const items = Array.isArray(data) ? data : [];
+
+          if (items.length === 0) {
+            grid.innerHTML = "<p>No titles found for this collection.</p>";
+            return;
+          }
+
+          items.forEach((movie) => {
+            const title =
+              movie.primaryTitle || movie.originalTitle || "Untitled";
+            const image =
+              movie.primaryImage ||
+              "https://via.placeholder.com/200x280?text=No+Image";
+            const year = movie.startYear || "";
+            const movieId = movie.id;
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.onclick = () =>
+              (window.location.href = `/details-page?id=${movieId}`);
+            card.innerHTML = `
+                        <img src="${image}" alt="${title}">
+                        <div class="card-body">
+                            <h4>${title}</h4>
+                            <p>${year}</p>
+                        </div>
+                    `;
+            grid.appendChild(card);
+          });
+        } catch (err) {
+          grid.innerHTML = "<p>Error loading collection.</p>";
+        }
+      }
+    </script>
+  </body>
+</html>

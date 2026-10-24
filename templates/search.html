@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Box Office - Search</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='search.style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <a href="/" class="logo">🎬 BOX OFFICE</a>
+      <div class="nav-links">
+        <a href="/">← Back to Home</a>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="search-bar-box">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search any movie (e.g., Pushpa, Sita Ramam)..."
+          onkeypress="handleKey(event)"
+        />
+        <button class="search-btn" onclick="executeSearch()">Search</button>
+      </div>
+
+      <div id="resultsGrid" class="grid">
+        <p
+          style="
+            text-align: center;
+            color: var(--text-muted);
+            grid-column: 1/-1;
+          "
+        >
+          Type a title above to search movies...
+        </p>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        &copy; 2026 Box Office. All copyrights are reserved by
+        <strong>Gothari Kusuma</strong>.
+      </p>
+      <div class="social-links">
+        <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
+        <a href="https://linkedin.com/in/kusuma-gothari-dummy" target="_blank"
+          >LinkedIn</a
+        >
+        <a href="https://github.com/kusuma-gothari-dummy" target="_blank"
+          >GitHub</a
+        >
+      </div>
+    </footer>
+
+    <script>
+      function handleKey(e) {
+        if (e.key === "Enter") {
+          executeSearch();
+        }
+      }
+
+      async function executeSearch() {
+        const query = document.getElementById("searchInput").value.trim();
+        const grid = document.getElementById("resultsGrid");
+        if (!query) return;
+
+        grid.innerHTML =
+          "<p style='text-align: center; color: var(--text-muted); grid-column: 1/-1;'>Searching database...</p>";
+
+        try {
+          const response = await fetch(
+            `/api/search?query=${encodeURIComponent(query)}`
+          );
+          const data = await response.json();
+
+          grid.innerHTML = "";
+          if (!data || data.length === 0) {
+            grid.innerHTML =
+              "<p style='text-align: center; color: var(--text-muted); grid-column: 1/-1;'>No matching movies found.</p>";
+            return;
+          }
+
+          data.forEach((movie) => {
+            const title =
+              movie.primaryTitle ||
+              movie.originalTitle ||
+              movie.title ||
+              "Untitled";
+            const image =
+              movie.primaryImage ||
+              movie.poster ||
+              "https://via.placeholder.com/200x280?text=No+Image";
+            const year = movie.startYear || movie.year || "";
+            const id = movie.id || movie.imdbId;
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.onclick = () =>
+              (window.location.href = `/details-page?id=${id}`);
+            card.innerHTML = `
+                        <img src="${image}" alt="${title}">
+                        <div class="card-body">
+                            <h4>${title}</h4>
+                            <p>${year}</p>
+                        </div>
+                    `;
+            grid.appendChild(card);
+          });
+        } catch (err) {
+          grid.innerHTML =
+            "<p style='text-align: center; color: var(--text-muted); grid-column: 1/-1;'>Error connecting to API server.</p>";
+        }
+      }
+    </script>
+  </body>
+</html>
