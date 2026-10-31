@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Box Office - Home</title>
+    <title>Box Office — Indian Cinema</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='index.style.css') }}"
@@ -11,197 +11,374 @@
   </head>
   <body>
     <header>
-      <a href="/" class="logo">🎬 BOX OFFICE</a>
-      <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/search-page" class="search-btn-nav">🔍 Search Movies</a>
-      </div>
+      <a href="{{ url_for('home') }}" class="logo">🎬 BOX OFFICE</a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="{{ url_for('home') }}">Home</a>
+        <button class="watchlist-nav" type="button" onclick="openWatchlist()">
+          🔖 My Watchlist <span id="watchlistCount">0</span>
+        </button>
+        <a href="{{ url_for('search_page') }}" class="search-btn-nav"
+          >🔍 Search Movies</a
+        >
+      </nav>
     </header>
 
-    <div class="hero">
-      <h1>Discover Blockbuster Movies</h1>
-      <p>Explore Trending Telugu, Tamil, Malayalam & Top Rated Indian Cinema</p>
-    </div>
-
-    <div class="container">
-      <!-- Language Filter Tabs (Telugu Default) -->
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchCategory('telugu', this)">
-          Trending Telugu
-        </button>
-        <button class="tab-btn" onclick="switchCategory('tamil', this)">
-          Trending Tamil
-        </button>
-        <button class="tab-btn" onclick="switchCategory('malayalam', this)">
-          Top Malayalam
-        </button>
-        <button class="tab-btn" onclick="switchCategory('top-indian', this)">
-          Top Rated Indian
-        </button>
-      </div>
-
-      <div id="categoryTitle" class="section-title">Trending Telugu Movies</div>
-      <div id="movieGrid" class="grid">
-        <p style="color: var(--text-muted)">Loading movies...</p>
-      </div>
-
-      {/* Special Curated Director & Cast Collections */}
-      <div class="special-section">
-        <h3>🌟 Explore Special Collections</h3>
-        <p style="color: var(--text-muted); font-size: 14px">
-          Quick check curated director and cast filmographies based on your
-          endpoints:
+    <main>
+      <section class="hero">
+        <p class="eyebrow">YOUR NEXT GREAT WATCH</p>
+        <h1>Discover Indian cinema</h1>
+        <p>
+          Fresh releases with direct ticket booking, crowd favourites, and
+          classics worth revisiting.
         </p>
-        <div class="special-btns">
-          <a
-            href="#"
-            class="special-btn"
-            onclick="loadPersonTitles('director', 'nm0634240', 'Director Masterpieces')"
-            >🎬 Director Titles (ID: nm0634240)</a
-          >
-          <a
-            href="#"
-            class="special-btn"
-            onclick="loadPersonTitles('cast', 'nm0000158', 'Featured Cast Filmography')"
-            >⭐ Cast Titles Collection</a
-          >
+      </section>
+
+      <!-- Top Hero Scroller for Featured Movies -->
+      <section class="featured-wrap" aria-label="Featured movies">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">NOW SHOWING IN THEATERS</p>
+            <h2 id="featuredTitle">Featured Telugu releases</h2>
+          </div>
+          <div class="carousel-controls">
+            <button
+              type="button"
+              onclick="scrollCarousel(-1)"
+              aria-label="Previous movies"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onclick="scrollCarousel(1)"
+              aria-label="Next movies"
+            >
+              ›
+            </button>
+          </div>
         </div>
+        <div id="featuredCarousel" class="featured-carousel">
+          <p class="loading">Loading featured movies…</p>
+        </div>
+      </section>
+
+      <section class="container">
+        <div class="tabs" role="tablist" aria-label="Movie categories">
+          <button class="tab-btn active" data-category="telugu">
+            Trending Telugu
+          </button>
+          <button class="tab-btn" data-category="tamil">Trending Tamil</button>
+          <button class="tab-btn" data-category="malayalam">
+            Top Malayalam
+          </button>
+          <button class="tab-btn" data-category="top-indian">
+            Top Rated Indian
+          </button>
+        </div>
+
+        <h2 id="categoryTitle" class="section-title">Trending Telugu Movies</h2>
+        <div id="movieGrid" class="grid" aria-live="polite">
+          <p class="loading">Loading movies…</p>
+        </div>
+      </section>
+    </main>
+
+    <div
+      class="modal"
+      id="watchlistModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="watchlistTitle"
+    >
+      <div class="modal-panel">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeWatchlist()"
+          aria-label="Close watchlist"
+        >
+          ×
+        </button>
+        <h2 id="watchlistTitle">My Watchlist</h2>
+        <div id="watchlistItems" class="watchlist-items"></div>
       </div>
     </div>
 
     <footer>
-      <div class="footer-content">
-        <p>
-          &copy; 2026 Box Office. All copyrights are reserved by
-          <strong>Gothari Kusuma</strong>.
-        </p>
-        <div class="social-links">
-          <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
-          <a href="https://linkedin.com/in/kusuma-gothari-dummy" target="_blank"
-            >LinkedIn</a
-          >
-          <a href="https://github.com/kusuma-gothari-dummy" target="_blank"
-            >GitHub</a
-          >
-        </div>
-        <p style="font-size: 11px; color: #666; margin-top: 8px">
-          Designed for academic project demonstration.
-        </p>
+      <p>
+        © 2026 Box Office. All copyrights are reserved by
+        <strong>Gothari Kusuma</strong>.
+      </p>
+      <div class="social-links">
+        <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
+        <a
+          href="https://linkedin.com/in/kusuma-gothari-dummy"
+          target="_blank"
+          rel="noreferrer"
+          >LinkedIn</a
+        >
+        <a
+          href="https://github.com/kusuma-gothari-dummy"
+          target="_blank"
+          rel="noreferrer"
+          >GitHub</a
+        >
       </div>
     </footer>
 
     <script>
-      // Load default category (Telugu) on startup
-      window.onload = function () {
-        fetchMovies("telugu");
+      const labels = {
+        telugu: "Trending Telugu Movies",
+        tamil: "Trending Tamil Movies",
+        malayalam: "Top Rated Malayalam Movies",
+        "top-indian": "Top Rated Indian Movies",
+      };
+      let carouselTimer;
+      const fallbackPoster =
+        "https://placehold.co/400x600/1a1c23/f5c518?text=No+Poster";
+
+      const watchlist = () =>
+        JSON.parse(localStorage.getItem("boxOfficeWatchlist") || "[]");
+      const escapeHTML = (value = "") =>
+        String(value).replace(
+          /[&<>'"]/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            }[char])
+        );
+
+      const movieData = (movie) => {
+        const yearStr =
+          movie.startYear ||
+          movie.year ||
+          (movie.releaseDate || "").slice(0, 4) ||
+          "—";
+        const yearNum = parseInt(yearStr, 10) || 0;
+        return {
+          id: movie.id || movie.imdbId,
+          title:
+            movie.primaryTitle ||
+            movie.originalTitle ||
+            movie.title ||
+            "Untitled",
+          image: movie.primaryImage || movie.poster || fallbackPoster,
+          year: yearStr,
+          isNew: yearNum >= 2025,
+        };
       };
 
-      function switchCategory(category, btnElement) {
-        // Update active tab styling
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((btn) => btn.classList.remove("active"));
-        btnElement.classList.add("active");
+      const getItems = (data) =>
+        Array.isArray(data) ? data : data.results || data.titles || [];
 
-        // Update Section Title header text
-        const titles = {
-          telugu: "Trending Telugu Movies",
-          tamil: "Trending Tamil Movies",
-          malayalam: "Top Rated Malayalam Movies",
-          "top-indian": "Top Rated Indian Movies",
-        };
-        document.getElementById("categoryTitle").innerText = titles[category];
+      function updateWatchlistCount() {
+        document.getElementById("watchlistCount").textContent =
+          watchlist().length;
+      }
 
-        fetchMovies(category);
+      function isSaved(id) {
+        return watchlist().some((movie) => movie.id === id);
+      }
+
+      function toggleWatchlist(movie, event) {
+        event?.stopPropagation();
+        if (!movie.id) return;
+        const items = watchlist();
+        const index = items.findIndex((item) => item.id === movie.id);
+        index > -1 ? items.splice(index, 1) : items.unshift(movie);
+        localStorage.setItem("boxOfficeWatchlist", JSON.stringify(items));
+        updateWatchlistCount();
+        document.querySelectorAll("[data-watch-id]").forEach((button) => {
+          if (button.dataset.watchId === movie.id) {
+            button.textContent = isSaved(movie.id)
+              ? "🔖 Saved"
+              : "🔖 + Watchlist";
+          }
+        });
+      }
+
+      function openDetails(id) {
+        if (id)
+          window.location.href = `/details-page?id=${encodeURIComponent(id)}`;
+      }
+
+      function movieCard(movie) {
+        const m = movieData(movie);
+        const encoded = encodeURIComponent(JSON.stringify(m)).replace(
+          /'/g,
+          "%27"
+        );
+
+        const actionBtn = m.isNew
+          ? `<a href="https://bookmyshow.com/explore/home" target="_blank" rel="noreferrer" class="card-action-btn book-btn" onclick="event.stopPropagation();">🎟️ Book Ticket</a>`
+          : `<button class="card-action-btn watch-btn" type="button" onclick="openDetails('${escapeHTML(
+              m.id
+            )}')">▶ Details / Stream</button>`;
+
+        return `
+        <article class="card" tabindex="0" onclick="openDetails('${escapeHTML(
+          m.id
+        )}')" onkeydown="if(event.key==='Enter') openDetails('${escapeHTML(
+          m.id
+        )}')">
+          <img src="${escapeHTML(m.image)}" alt="Poster for ${escapeHTML(
+          m.title
+        )}" onerror="this.src='${fallbackPoster}'">
+          <div class="card-body">
+            <h3>${escapeHTML(m.title)}</h3>
+            <p>${escapeHTML(m.year)} ${
+          m.isNew ? '<span class="new-tag">In Theaters</span>' : ""
+        }</p>
+            ${actionBtn}
+            <button data-watch-id="${escapeHTML(
+              m.id
+            )}" class="watchlist-button" type="button" onclick="toggleWatchlist(JSON.parse(decodeURIComponent('${encoded}')), event)">
+              ${isSaved(m.id) ? "🔖 Saved" : "🔖 + Watchlist"}
+            </button>
+          </div>
+        </article>
+      `;
+      }
+
+      function renderMovies(items) {
+        const grid = document.getElementById("movieGrid");
+        grid.classList.remove("fade-in");
+        void grid.offsetWidth;
+        grid.classList.add("fade-in");
+        grid.innerHTML = items.length
+          ? items.map(movieCard).join("")
+          : '<p class="loading">No movies found for this category.</p>';
+      }
+
+      function renderCarousel(items) {
+        const carousel = document.getElementById("featuredCarousel");
+        const featuredItems = items.slice(0, 10);
+        carousel.innerHTML =
+          featuredItems
+            .map((movie) => {
+              const m = movieData(movie);
+              return `
+          <article class="featured-card" onclick="openDetails('${escapeHTML(
+            m.id
+          )}')">
+            <img src="${escapeHTML(m.image)}" alt="Poster for ${escapeHTML(
+                m.title
+              )}" onerror="this.src='${fallbackPoster}'">
+            <div>
+              <p>${escapeHTML(m.year)} ${m.isNew ? "• 🎟️ NOW SHOWING" : ""}</p>
+              <h3>${escapeHTML(m.title)}</h3>
+            </div>
+          </article>
+        `;
+            })
+            .join("") || '<p class="loading">No featured movies available.</p>';
+
+        clearInterval(carouselTimer);
+        carouselTimer = setInterval(() => scrollCarousel(1), 4500);
+      }
+
+      function scrollCarousel(direction) {
+        const element = document.getElementById("featuredCarousel");
+        element.scrollBy({
+          left: direction * Math.max(280, element.clientWidth * 0.72),
+          behavior: "smooth",
+        });
       }
 
       async function fetchMovies(category) {
-        const grid = document.getElementById("movieGrid");
-        grid.innerHTML = "<p style='color: var(--text-muted);'>Loading...</p>";
-
+        document.getElementById("movieGrid").innerHTML =
+          '<p class="loading">Loading movies…</p>';
+        document.getElementById("featuredCarousel").innerHTML =
+          '<p class="loading">Loading featured movies…</p>';
         try {
           const response = await fetch(`/api/movies/${category}`);
           const data = await response.json();
-
-          grid.innerHTML = "";
-          const items = Array.isArray(data) ? data : data.results || [];
-
-          if (items.length === 0) {
-            grid.innerHTML = "<p>No movies found.</p>";
-            return;
-          }
-
-          items.forEach((movie) => {
-            const title =
-              movie.primaryTitle || movie.originalTitle || "Untitled";
-            const image =
-              movie.primaryImage ||
-              "https://via.placeholder.com/200x280?text=No+Image";
-            const year = movie.startYear || "";
-            const id = movie.id;
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.onclick = () =>
-              (window.location.href = `/details-page?id=${id}`);
-            card.innerHTML = `
-                        <img src="${image}" alt="${title}">
-                        <div class="card-body">
-                            <h4>${title}</h4>
-                            <p>${year}</p>
-                        </div>
-                    `;
-            grid.appendChild(card);
-          });
-        } catch (err) {
-          grid.innerHTML = "<p>Error loading movies.</p>";
+          if (!response.ok) throw new Error(data.error);
+          const items = getItems(data);
+          renderMovies(items);
+          renderCarousel(items);
+        } catch (error) {
+          const message = escapeHTML(
+            error.message || "Please try again later."
+          );
+          document.getElementById(
+            "movieGrid"
+          ).innerHTML = `<p class="loading">Could not load movies. ${message}</p>`;
+          document.getElementById("featuredCarousel").innerHTML =
+            '<p class="loading">Featured movies are unavailable.</p>';
         }
       }
 
-      async function loadPersonTitles(type, id, collectionName) {
-        document.getElementById("categoryTitle").innerText = collectionName;
-        const grid = document.getElementById("movieGrid");
-        grid.innerHTML =
-          "<p style='color: var(--text-muted);'>Loading collection...</p>";
-
-        try {
-          const response = await fetch(`/api/person/${type}/${id}`);
-          const data = await response.json();
-
-          grid.innerHTML = "";
-          const items = Array.isArray(data) ? data : [];
-
-          if (items.length === 0) {
-            grid.innerHTML = "<p>No titles found for this collection.</p>";
-            return;
-          }
-
-          items.forEach((movie) => {
-            const title =
-              movie.primaryTitle || movie.originalTitle || "Untitled";
-            const image =
-              movie.primaryImage ||
-              "https://via.placeholder.com/200x280?text=No+Image";
-            const year = movie.startYear || "";
-            const movieId = movie.id;
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.onclick = () =>
-              (window.location.href = `/details-page?id=${movieId}`);
-            card.innerHTML = `
-                        <img src="${image}" alt="${title}">
-                        <div class="card-body">
-                            <h4>${title}</h4>
-                            <p>${year}</p>
-                        </div>
-                    `;
-            grid.appendChild(card);
-          });
-        } catch (err) {
-          grid.innerHTML = "<p>Error loading collection.</p>";
-        }
+      function selectCategory(category, button) {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((tab) => tab.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById("categoryTitle").textContent = labels[category];
+        document.getElementById(
+          "featuredTitle"
+        ).textContent = `Featured ${labels[category]
+          .replace("Trending ", "")
+          .replace(" Movies", "")
+          .replace("Top Rated ", "")} releases`;
+        fetchMovies(category);
       }
+
+      function openWatchlist() {
+        document.getElementById("watchlistModal").classList.add("show");
+        document
+          .getElementById("watchlistModal")
+          .setAttribute("aria-hidden", "false");
+        const items = watchlist();
+        document.getElementById("watchlistItems").innerHTML = items.length
+          ? items
+              .map((m) => {
+                const encoded = encodeURIComponent(JSON.stringify(m)).replace(
+                  /'/g,
+                  "%27"
+                );
+                return `
+          <div class="watchlist-item">
+            <img src="${escapeHTML(m.image)}" alt="">
+            <button type="button" onclick="openDetails('${escapeHTML(m.id)}')">
+              <strong>${escapeHTML(m.title)}</strong>
+              <span>${escapeHTML(m.year)}</span>
+            </button>
+            <button class="remove-button" onclick="toggleWatchlist(JSON.parse(decodeURIComponent('${encoded}')), event); openWatchlist()" type="button">Remove</button>
+          </div>
+        `;
+              })
+              .join("")
+          : '<p class="loading">Your watchlist is empty. Add a movie to save it here.</p>';
+      }
+
+      function closeWatchlist() {
+        document.getElementById("watchlistModal").classList.remove("show");
+        document
+          .getElementById("watchlistModal")
+          .setAttribute("aria-hidden", "true");
+      }
+
+      document
+        .querySelectorAll(".tab-btn")
+        .forEach((button) =>
+          button.addEventListener("click", () =>
+            selectCategory(button.dataset.category, button)
+          )
+        );
+      document
+        .getElementById("watchlistModal")
+        .addEventListener("click", (event) => {
+          if (event.target.id === "watchlistModal") closeWatchlist();
+        });
+
+      updateWatchlistCount();
+      fetchMovies("telugu");
     </script>
   </body>
 </html>

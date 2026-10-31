@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Box Office - Search</title>
+    <title>Search — Box Office</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='search.style.css') }}"
@@ -11,57 +11,189 @@
   </head>
   <body>
     <header>
-      <a href="/" class="logo">🎬 BOX OFFICE</a>
-      <div class="nav-links">
-        <a href="/">← Back to Home</a>
-      </div>
+      <a href="{{ url_for('home') }}" class="logo">🎬 BOX OFFICE</a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="{{ url_for('home') }}">← Back to Home</a>
+        <button class="watchlist-nav" type="button" onclick="openWatchlist()">
+          🔖 My Watchlist <span id="watchlistCount">0</span>
+        </button>
+      </nav>
     </header>
 
-    <div class="container">
+    <main class="container">
+      <section class="search-intro">
+        <p class="eyebrow">FIND YOUR NEXT FILM</p>
+        <h1>Search movies</h1>
+        <p>Search by title and keep the films you want to see in one place.</p>
+      </section>
+
       <div class="search-bar-box">
+        <label class="sr-only" for="searchInput">Movie title</label>
         <input
-          type="text"
+          type="search"
           id="searchInput"
-          placeholder="Search any movie (e.g., Pushpa, Sita Ramam)..."
-          onkeypress="handleKey(event)"
+          placeholder="Search any movie (e.g., Pushpa, Sita Ramam)…"
+          autocomplete="off"
         />
-        <button class="search-btn" onclick="executeSearch()">Search</button>
+        <button class="search-btn" type="button" onclick="executeSearch()">
+          Search
+        </button>
       </div>
 
-      <div id="resultsGrid" class="grid">
-        <p
-          style="
-            text-align: center;
-            color: var(--text-muted);
-            grid-column: 1/-1;
-          "
+      <div id="resultsGrid" class="grid" aria-live="polite">
+        <p class="loading">Type a title above to search movies.</p>
+      </div>
+    </main>
+
+    <div
+      class="modal"
+      id="watchlistModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="watchlistTitle"
+    >
+      <div class="modal-panel">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeWatchlist()"
+          aria-label="Close watchlist"
         >
-          Type a title above to search movies...
-        </p>
+          ×
+        </button>
+        <h2 id="watchlistTitle">My Watchlist</h2>
+        <div id="watchlistItems" class="watchlist-items"></div>
       </div>
     </div>
 
     <footer>
       <p>
-        &copy; 2026 Box Office. All copyrights are reserved by
+        © 2026 Box Office. All copyrights are reserved by
         <strong>Gothari Kusuma</strong>.
       </p>
       <div class="social-links">
         <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
-        <a href="https://linkedin.com/in/kusuma-gothari-dummy" target="_blank"
+        <a
+          href="https://linkedin.com/in/kusuma-gothari-dummy"
+          target="_blank"
+          rel="noreferrer"
           >LinkedIn</a
         >
-        <a href="https://github.com/kusuma-gothari-dummy" target="_blank"
+        <a
+          href="https://github.com/kusuma-gothari-dummy"
+          target="_blank"
+          rel="noreferrer"
           >GitHub</a
         >
       </div>
     </footer>
 
     <script>
-      function handleKey(e) {
-        if (e.key === "Enter") {
-          executeSearch();
-        }
+      const fallbackPoster =
+        "https://placehold.co/400x600/1a1c23/f5c518?text=No+Poster";
+      const watchlist = () =>
+        JSON.parse(localStorage.getItem("boxOfficeWatchlist") || "[]");
+      const escapeHTML = (value = "") =>
+        String(value).replace(
+          /[&<>'"]/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            }[char])
+        );
+
+      const movieData = (movie) => {
+        const yearStr =
+          movie.startYear ||
+          movie.year ||
+          (movie.releaseDate || "").slice(0, 4) ||
+          "—";
+        const yearNum = parseInt(yearStr, 10) || 0;
+        return {
+          id: movie.id || movie.imdbId,
+          title:
+            movie.primaryTitle ||
+            movie.originalTitle ||
+            movie.title ||
+            "Untitled",
+          image: movie.primaryImage || movie.poster || fallbackPoster,
+          year: yearStr,
+          isNew: yearNum >= 2025,
+        };
+      };
+
+      function updateWatchlistCount() {
+        document.getElementById("watchlistCount").textContent =
+          watchlist().length;
+      }
+
+      function isSaved(id) {
+        return watchlist().some((movie) => movie.id === id);
+      }
+
+      function toggleWatchlist(movie, event) {
+        event?.stopPropagation();
+        if (!movie.id) return;
+        const items = watchlist();
+        const index = items.findIndex((item) => item.id === movie.id);
+        index > -1 ? items.splice(index, 1) : items.unshift(movie);
+        localStorage.setItem("boxOfficeWatchlist", JSON.stringify(items));
+        updateWatchlistCount();
+        document.querySelectorAll("[data-watch-id]").forEach((button) => {
+          if (button.dataset.watchId === movie.id) {
+            button.textContent = isSaved(movie.id)
+              ? "🔖 Saved"
+              : "🔖 + Watchlist";
+          }
+        });
+      }
+
+      function openDetails(id) {
+        if (id)
+          window.location.href = `/details-page?id=${encodeURIComponent(id)}`;
+      }
+
+      function movieCard(movie) {
+        const m = movieData(movie);
+        const encoded = encodeURIComponent(JSON.stringify(m)).replace(
+          /'/g,
+          "%27"
+        );
+
+        const actionBtn = m.isNew
+          ? `<a href="https://bookmyshow.com/explore/home" target="_blank" rel="noreferrer" class="card-action-btn book-btn" onclick="event.stopPropagation();">🎟️ Book Ticket</a>`
+          : `<button class="card-action-btn watch-btn" type="button" onclick="openDetails('${escapeHTML(
+              m.id
+            )}')">▶ Details / Stream</button>`;
+
+        return `
+        <article class="card" tabindex="0" onclick="openDetails('${escapeHTML(
+          m.id
+        )}')" onkeydown="if(event.key==='Enter') openDetails('${escapeHTML(
+          m.id
+        )}')">
+          <img src="${escapeHTML(m.image)}" alt="Poster for ${escapeHTML(
+          m.title
+        )}" onerror="this.src='${fallbackPoster}'">
+          <div class="card-body">
+            <h3>${escapeHTML(m.title)}</h3>
+            <p>${escapeHTML(m.year)} ${
+          m.isNew ? '<span class="new-tag">In Theaters</span>' : ""
+        }</p>
+            ${actionBtn}
+            <button data-watch-id="${escapeHTML(
+              m.id
+            )}" class="watchlist-button" type="button" onclick="toggleWatchlist(JSON.parse(decodeURIComponent('${encoded}')), event)">
+              ${isSaved(m.id) ? "🔖 Saved" : "🔖 + Watchlist"}
+            </button>
+          </div>
+        </article>
+      `;
       }
 
       async function executeSearch() {
@@ -69,53 +201,73 @@
         const grid = document.getElementById("resultsGrid");
         if (!query) return;
 
-        grid.innerHTML =
-          "<p style='text-align: center; color: var(--text-muted); grid-column: 1/-1;'>Searching database...</p>";
-
+        grid.innerHTML = '<p class="loading">Searching database…</p>';
         try {
           const response = await fetch(
             `/api/search?query=${encodeURIComponent(query)}`
           );
-          const data = await response.json();
+          const items = await response.json();
+          if (!response.ok) throw new Error(items.error || "Search failed");
 
-          grid.innerHTML = "";
-          if (!data || data.length === 0) {
-            grid.innerHTML =
-              "<p style='text-align: center; color: var(--text-muted); grid-column: 1/-1;'>No matching movies found.</p>";
-            return;
-          }
-
-          data.forEach((movie) => {
-            const title =
-              movie.primaryTitle ||
-              movie.originalTitle ||
-              movie.title ||
-              "Untitled";
-            const image =
-              movie.primaryImage ||
-              movie.poster ||
-              "https://via.placeholder.com/200x280?text=No+Image";
-            const year = movie.startYear || movie.year || "";
-            const id = movie.id || movie.imdbId;
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.onclick = () =>
-              (window.location.href = `/details-page?id=${id}`);
-            card.innerHTML = `
-                        <img src="${image}" alt="${title}">
-                        <div class="card-body">
-                            <h4>${title}</h4>
-                            <p>${year}</p>
-                        </div>
-                    `;
-            grid.appendChild(card);
-          });
-        } catch (err) {
-          grid.innerHTML =
-            "<p style='text-align: center; color: var(--text-muted); grid-column: 1/-1;'>Error connecting to API server.</p>";
+          grid.innerHTML = items.length
+            ? items.map(movieCard).join("")
+            : '<p class="loading">No matching movies found.</p>';
+        } catch (error) {
+          grid.innerHTML = `<p class="loading">Could not complete search. ${escapeHTML(
+            error.message
+          )}</p>`;
         }
       }
+
+      function handleKey(event) {
+        if (event.key === "Enter") executeSearch();
+      }
+
+      function openWatchlist() {
+        document.getElementById("watchlistModal").classList.add("show");
+        document
+          .getElementById("watchlistModal")
+          .setAttribute("aria-hidden", "false");
+        const items = watchlist();
+        document.getElementById("watchlistItems").innerHTML = items.length
+          ? items
+              .map((m) => {
+                const encoded = encodeURIComponent(JSON.stringify(m)).replace(
+                  /'/g,
+                  "%27"
+                );
+                return `
+          <div class="watchlist-item">
+            <img src="${escapeHTML(m.image)}" alt="">
+            <button type="button" onclick="openDetails('${escapeHTML(m.id)}')">
+              <strong>${escapeHTML(m.title)}</strong>
+              <span>${escapeHTML(m.year)}</span>
+            </button>
+            <button class="remove-button" onclick="toggleWatchlist(JSON.parse(decodeURIComponent('${encoded}')), event); openWatchlist()" type="button">Remove</button>
+          </div>
+        `;
+              })
+              .join("")
+          : '<p class="loading">Your watchlist is empty. Add a movie to save it here.</p>';
+      }
+
+      function closeWatchlist() {
+        document.getElementById("watchlistModal").classList.remove("show");
+        document
+          .getElementById("watchlistModal")
+          .setAttribute("aria-hidden", "true");
+      }
+
+      document
+        .getElementById("searchInput")
+        .addEventListener("keydown", handleKey);
+      document
+        .getElementById("watchlistModal")
+        .addEventListener("click", (event) => {
+          if (event.target.id === "watchlistModal") closeWatchlist();
+        });
+
+      updateWatchlistCount();
     </script>
   </body>
 </html>

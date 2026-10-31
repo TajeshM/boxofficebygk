@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Box Office - Movie Details</title>
+    <title>Movie Details — Box Office</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='details.style.css') }}"
@@ -11,33 +11,64 @@
   </head>
   <body>
     <header>
-      <a href="/" class="logo">🎬 BOX OFFICE</a>
-      <div class="nav-links">
-        <a href="/">Home</a>
-      </div>
+      <a href="{{ url_for('home') }}" class="logo">🎬 BOX OFFICE</a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="{{ url_for('home') }}">Home</a>
+        <button class="watchlist-nav" type="button" onclick="openWatchlist()">
+          🔖 My Watchlist <span id="watchlistCount">0</span>
+        </button>
+        <a href="{{ url_for('search_page') }}" class="search-btn-nav"
+          >🔍 Search Movies</a
+        >
+      </nav>
     </header>
 
-    <div class="container">
-      <a href="javascript:history.back()" class="back-btn">&larr; Go Back</a>
-
+    <main class="container">
+      <a href="javascript:history.back()" class="back-btn">← Go Back</a>
       <div id="detailContainer">
-        <p style="text-align: center; color: var(--text-muted)">
-          Loading movie details...
-        </p>
+        <p class="loading">Loading movie details…</p>
+      </div>
+    </main>
+
+    <div
+      class="modal"
+      id="watchlistModal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="watchlistTitle"
+    >
+      <div class="modal-panel">
+        <button
+          class="modal-close"
+          type="button"
+          onclick="closeWatchlist()"
+          aria-label="Close watchlist"
+        >
+          ×
+        </button>
+        <h2 id="watchlistTitle">My Watchlist</h2>
+        <div id="watchlistItems" class="watchlist-items"></div>
       </div>
     </div>
 
     <footer>
       <p>
-        &copy; 2026 Box Office. All copyrights are reserved by
+        © 2026 Box Office. All copyrights are reserved by
         <strong>Gothari Kusuma</strong>.
       </p>
       <div class="social-links">
         <a href="mailto:kusuma.gothari@dummyemail.com">Email</a>
-        <a href="https://linkedin.com/in/kusuma-gothari-dummy" target="_blank"
+        <a
+          href="https://linkedin.com/in/kusuma-gothari-dummy"
+          target="_blank"
+          rel="noreferrer"
           >LinkedIn</a
         >
-        <a href="https://github.com/kusuma-gothari-dummy" target="_blank"
+        <a
+          href="https://github.com/kusuma-gothari-dummy"
+          target="_blank"
+          rel="noreferrer"
           >GitHub</a
         >
       </div>
@@ -45,25 +76,75 @@
 
     <script>
       const movieId = "{{ movie_id }}";
+      let currentMovieTitle = "";
+      const fallbackPoster =
+        "https://placehold.co/400x600/1a1c23/f5c518?text=No+Poster";
+      const watchlist = () =>
+        JSON.parse(localStorage.getItem("boxOfficeWatchlist") || "[]");
+      const escapeHTML = (value = "") =>
+        String(value).replace(
+          /[&<>'"]/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            }[char])
+        );
 
-      window.onload = async function () {
+      function updateWatchlistCount() {
+        document.getElementById("watchlistCount").textContent =
+          watchlist().length;
+      }
+
+      function isSaved(id) {
+        return watchlist().some((movie) => movie.id === id);
+      }
+
+      function toggleWatchlist(movie, event) {
+        event?.stopPropagation();
+        if (!movie.id) return;
+        const items = watchlist();
+        const index = items.findIndex((item) => item.id === movie.id);
+        index > -1 ? items.splice(index, 1) : items.unshift(movie);
+        localStorage.setItem("boxOfficeWatchlist", JSON.stringify(items));
+        updateWatchlistCount();
+        const btn = document.getElementById("detailWatchlistBtn");
+        if (btn) {
+          btn.textContent = isSaved(movie.id)
+            ? "🔖 Saved to Watchlist"
+            : "🔖 + Add to Watchlist";
+        }
+      }
+
+      async function loadDetails() {
         const container = document.getElementById("detailContainer");
         if (!movieId) {
-          container.innerHTML = "<p>Invalid movie ID specified.</p>";
+          container.innerHTML =
+            '<p class="loading">Invalid movie ID specified.</p>';
           return;
         }
 
         try {
           const response = await fetch(`/api/movie-details/${movieId}`);
           const movie = await response.json();
+          if (!response.ok)
+            throw new Error(movie.error || "Failed to fetch details");
 
-          const title = movie.primaryTitle || movie.originalTitle || "Untitled";
-          const poster =
-            movie.primaryImage ||
-            "https://via.placeholder.com/300x440?text=No+Image";
-          const year =
+          currentMovieTitle =
+            movie.primaryTitle ||
+            movie.originalTitle ||
+            movie.title ||
+            "Untitled";
+          const poster = movie.primaryImage || movie.poster || fallbackPoster;
+          const yearStr =
             movie.startYear ||
-            (movie.releaseDate ? movie.releaseDate.split("-")[0] : "N/A");
+            movie.year ||
+            (movie.releaseDate || "").slice(0, 4) ||
+            "2026";
+          const yearNum = parseInt(yearStr, 10) || 2026;
           const rating = movie.averageRating
             ? `${movie.averageRating} / 10`
             : "N/A";
@@ -73,27 +154,139 @@
             ? `${movie.runtimeMinutes} mins`
             : "N/A";
 
-          container.innerHTML = `
-                    <div class="movie-detail-card">
-                        <img class="movie-poster" src="${poster}" alt="${title}">
-                        <div class="movie-info">
-                            <h1>${title} (${year})</h1>
-                            
-                            <div class="badges-row">
-                                <span class="badge badge-rating">⭐ ${rating}</span>
-                                <span class="badge">⏱️ ${runtime}</span>
-                                <span class="badge">🎭 ${genres}</span>
-                            </div>
+          let trailerEmbed = "";
+          if (movie.trailer) {
+            let trailerUrl = movie.trailer;
+            if (trailerUrl.includes("watch?v=")) {
+              trailerUrl = trailerUrl.replace("watch?v=", "embed/");
+            }
+            trailerEmbed = `
+            <section class="trailer">
+              <h2>Official Trailer</h2>
+              <div class="video-wrap">
+                <iframe src="${escapeHTML(
+                  trailerUrl
+                )}" title="Movie Trailer" allowfullscreen></iframe>
+              </div>
+            </section>
+          `;
+          }
 
-                            <div class="plot-heading">Plot Overview</div>
-                            <p class="plot-text">${description}</p>
-                        </div>
-                    </div>
-                `;
+          const movieObj = {
+            id: movieId,
+            title: currentMovieTitle,
+            image: poster,
+            year: yearStr,
+          };
+          const encodedMovie = encodeURIComponent(
+            JSON.stringify(movieObj)
+          ).replace(/'/g, "%27");
+          const savedState = isSaved(movieId);
+
+          let actionPanelHtml = "";
+          if (yearNum >= 2025) {
+            actionPanelHtml = `
+            <div class="action-panel">
+              <div>
+                <p class="eyebrow">NOW SHOWING</p>
+                <h2>Experience it on the big screen</h2>
+                <p>Find nearby theaters and book your tickets instantly.</p>
+              </div>
+              <a href="https://bookmyshow.com/explore/home" target="_blank" rel="noreferrer" class="primary-action">🎟️ Book Tickets Now</a>
+            </div>
+          `;
+          } else {
+            actionPanelHtml = `
+            <div class="action-panel">
+              <div>
+                <p class="eyebrow">CLASSIC ARCHIVE</p>
+                <h2>Stream or Enjoy Online</h2>
+                <p>This title is available across digital streaming platforms.</p>
+              </div>
+              <div class="stream-actions">
+                <a href="https://www.google.com/search?q=${encodeURIComponent(
+                  currentMovieTitle + " watch online streaming"
+                )}" target="_blank" rel="noreferrer" class="primary-action">▶ Watch Online</a>
+              </div>
+            </div>
+          `;
+          }
+
+          container.innerHTML = `
+          <div class="movie-detail-card">
+            <img class="movie-poster" src="${escapeHTML(
+              poster
+            )}" alt="Poster for ${escapeHTML(
+            currentMovieTitle
+          )}" onerror="this.src='${fallbackPoster}'">
+            <div class="movie-info">
+              <h1>${escapeHTML(currentMovieTitle)} <span>(${escapeHTML(
+            yearStr
+          )})</span></h1>
+              <div class="badges-row">
+                <span class="badge badge-rating">⭐ ${escapeHTML(rating)}</span>
+                <span class="badge">⏱️ ${escapeHTML(runtime)}</span>
+                <span class="badge">🎭 ${escapeHTML(genres)}</span>
+              </div>
+              <button id="detailWatchlistBtn" class="watchlist-button detail-watchlist" type="button" onclick="toggleWatchlist(JSON.parse(decodeURIComponent('${encodedMovie}')), event)">
+                ${
+                  savedState ? "🔖 Saved to Watchlist" : "🔖 + Add to Watchlist"
+                }
+              </button>
+              <div class="plot-heading">Plot Overview</div>
+              <p class="plot-text">${escapeHTML(description)}</p>
+            </div>
+          </div>
+          ${actionPanelHtml}
+          ${trailerEmbed}
+        `;
         } catch (err) {
-          container.innerHTML = "<p>Failed to load details from API.</p>";
+          container.innerHTML = `<p class="loading">Could not load movie details. ${escapeHTML(
+            err.message
+          )}</p>`;
         }
-      };
+      }
+
+      function openWatchlist() {
+        document.getElementById("watchlistModal").classList.add("show");
+        document
+          .getElementById("watchlistModal")
+          .setAttribute("aria-hidden", "false");
+        const items = watchlist();
+        document.getElementById("watchlistItems").innerHTML = items.length
+          ? items
+              .map((m) => {
+                const encoded = encodeURIComponent(JSON.stringify(m)).replace(
+                  /'/g,
+                  "%27"
+                );
+                return `<div class="watchlist-item"><img src="${escapeHTML(
+                  m.image
+                )}" alt=""><button type="button" onclick="window.location.href='/details-page?id=${escapeHTML(
+                  m.id
+                )}'"><strong>${escapeHTML(m.title)}</strong><span>${escapeHTML(
+                  m.year
+                )}</span></button><button class="remove-button" onclick="toggleWatchlist(JSON.parse(decodeURIComponent('${encoded}')), event); openWatchlist()" type="button">Remove</button></div>`;
+              })
+              .join("")
+          : '<p class="loading">Your watchlist is empty. Add a movie to save it here.</p>';
+      }
+
+      function closeWatchlist() {
+        document.getElementById("watchlistModal").classList.remove("show");
+        document
+          .getElementById("watchlistModal")
+          .setAttribute("aria-hidden", "true");
+      }
+
+      document
+        .getElementById("watchlistModal")
+        .addEventListener("click", (event) => {
+          if (event.target.id === "watchlistModal") closeWatchlist();
+        });
+
+      updateWatchlistCount();
+      loadDetails();
     </script>
   </body>
 </html>
